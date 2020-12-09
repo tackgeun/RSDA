@@ -72,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument('--snapshot_interval', type=int, default=1000, help="interval of two continuous output model")
     parser.add_argument('--output_dir', type=str, default='san', help="output directory of our model (in ../snapshot directory)")
     parser.add_argument('--lr', type=float, default=0.001, help="learning rate")
-    parser.add_argument('--lr_decay', type=bool, True)
+    parser.add_argument('--lr_decay', type=bool, default=True)
     parser.add_argument('--irm_weight', type=float, default=0.0)
     parser.add_argument('--irm_feature', type=str, default='logit')
     parser.add_argument('--irm_type', type=str, default='batch')
