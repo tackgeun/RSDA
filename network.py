@@ -68,6 +68,16 @@ class ResNet(nn.Module):
     y = self.fc(x)
     return x, y
 
+  def forward_mul(self, x, mul):
+    x = self.feature_layers(x)
+    x = x.view(x.size(0), -1)
+    if self.use_bottleneck and self.new_cls:
+        x = self.bottleneck(x)
+    x=self.radius*x/(torch.norm(x,dim=1,keepdim=True)+1e-10)
+    x = x * mul
+    y = self.fc(x)
+    return x, y
+
   def output_num(self):
     return self.__in_features
 

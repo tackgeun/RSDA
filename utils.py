@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import pdb
+
 def Entropy(input_):
     epsilon = 1e-5
     entropy = -input_ * torch.log(input_ + epsilon)
@@ -49,11 +51,26 @@ def SM(Xs,Xt,Ys,Yt,Cs_memory,Ct_memory,Wt=None,decay=0.3):
     Dist=cosine_matrix(Cs,Ct)
     return torch.sum(torch.diag(Dist)),Cs,Ct
 
+# def robust_pseudo_loss(output,label,weight,q=1.0):
+#     weight[weight<0.5] = 0.0
+#     #one_hot_label=torch.zeros(output.size()).scatter_(1,label.cpu().view(-1,1),1).cuda()
+#     one_hot_label=torch.zeros(output.size()).scatter(1,label.cpu().view(-1,1),1).cuda()
+#     mask=torch.eq(one_hot_label,1.0)
+#     output=F.softmax(output,dim=1)
+#     mae=(1.0-torch.masked_select(output,mask)**q)/q    
+#     return torch.sum(weight*mae)/(torch.sum(weight)+1e-10)
 
 def robust_pseudo_loss(output,label,weight,q=1.0):
-    weight[weight<0.5] = 0.0
-    one_hot_label=torch.zeros(output.size()).scatter_(1,label.cpu().view(-1,1),1).cuda()
-    mask=torch.eq(one_hot_label,1.0)
+    #weight[weight<0.5] = 0.0
+    weight = weight * (weight>=0.5).float()
+    
+    #one_hot_label=torch.zeros(output.size()).scatter_(1,label.cpu().view(-1,1),1).cuda()
+    one_hot_label=torch.zeros(output.size()).scatter(1,label.cpu().view(-1,1),1).cuda()
+    mask=torch.eq(one_hot_label,1.0).detach()
     output=F.softmax(output,dim=1)
-    mae=(1.0-torch.masked_select(output,mask)**q)/q
+    mae=(1.0-torch.masked_select(output,mask)**q)/q    
     return torch.sum(weight*mae)/(torch.sum(weight)+1e-10)
+
+    #weight = weight.view(-1, 1).detach()
+    #mae=((1.0-output) * mask.float())    
+    #return torch.sum(weight*mae)/(torch.sum(weight)+1e-10)
