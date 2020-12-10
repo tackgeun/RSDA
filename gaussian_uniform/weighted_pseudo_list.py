@@ -55,10 +55,7 @@ def make_weighted_pseudo_list(args,model):
     list_path = args.target_list
     if not os.path.exists('data/{}/pseudo_list'.format(args.dataset)):
         os.mkdir('data/{}/pseudo_list'.format(args.dataset))
-    if(args.irm_weight > 0.0):
-        save_path = 'data/{}/pseudo_list/{}_{}_list_irm-{}_{}.txt'.format(args.dataset,args.source,args.target,args.irm_feature,args.irm_weight)
-    else:
-        save_path = 'data/{}/pseudo_list/{}_{}_list.txt'.format(args.dataset,args.source,args.target)
+    save_path = args.save_path
     dsets = ImageList(open(list_path).readlines(), transform=image_test())
     dloader = DataLoader(dsets, batch_size=2*args.batch_size, shuffle=False, num_workers=4, drop_last=False)
 

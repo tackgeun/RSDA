@@ -41,8 +41,7 @@ def train(args):
                                 transform=image_train())
     dset_loaders["source"] = DataLoader(dsets["source"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
-    dsets["target"] = ImageList(open('data/{}/pseudo_list/{}_{}_list.txt'
-                                     ''.format(args.dataset,args.source,args.target)).readlines(),
+    dsets["target"] = ImageList(open(args.save_path).readlines(),
                                 transform=image_train(),pseudo=True)
     dset_loaders["target"] = DataLoader(dsets["target"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
@@ -172,8 +171,7 @@ def train_irm(args):
                                 transform=image_train())
     dset_loaders["source"] = DataLoader(dsets["source"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
-    dsets["target"] = ImageList(open('data/{}/pseudo_list/{}_{}_list.txt'
-                                     ''.format(args.dataset,args.source,args.target)).readlines(),
+    dsets["target"] = ImageList(open(args.save_path).readlines(),
                                 transform=image_train(),pseudo=True)
     dset_loaders["target"] = DataLoader(dsets["target"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
@@ -279,8 +277,7 @@ def train_irm_feat(args):
                                 transform=image_train())
     dset_loaders["source"] = DataLoader(dsets["source"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
-    dsets["target"] = ImageList(open('data/{}/pseudo_list/{}_{}_list.txt'
-                                     ''.format(args.dataset,args.source,args.target)).readlines(),
+    dsets["target"] = ImageList(open(args.save_path).readlines(),
                                 transform=image_train(),pseudo=True)
     dset_loaders["target"] = DataLoader(dsets["target"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
@@ -389,8 +386,7 @@ def train_MSTN_irm_feat(args):
                                 transform=image_train())
     dset_loaders["source"] = DataLoader(dsets["source"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)
-    dsets["target"] = ImageList(open('data/{}/pseudo_list/{}_{}_list.txt'
-                                     ''.format(args.dataset,args.source,args.target)).readlines(),
+    dsets["target"] = ImageList(open(args.save_path).readlines(),
                                 transform=image_train(),pseudo=True)
     dset_loaders["target"] = DataLoader(dsets["target"], batch_size=args.batch_size, \
                                         shuffle=True, num_workers=4, drop_last=True)

@@ -24,7 +24,12 @@ def main(args):
     for stage in range(args.stages):
         print('\n\n########### stage : {:d}th ##############\n\n'.format(stage))
         args.log_file.write('\n\n########### stage : {:d}th    ##############'.format(stage))
-        
+
+        if(args.irm_weight > 0.0):
+            args.save_path = 'data/{}/pseudo_list/{}_{}_list_irm-{}_{}.txt'.format(args.dataset,args.source,args.target,args.irm_feature,args.irm_weight)
+        else:
+            args.save_path = 'data/{}/pseudo_list/{}_{}_list.txt'.format(args.dataset,args.source,args.target)        
+
         #updating parameters of gaussian-uniform mixture model with fixed network parameters，the updated pseudo labels and 
         #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
         make_weighted_pseudo_list(args, model)
