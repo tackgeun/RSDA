@@ -25,10 +25,15 @@ def main(args):
         print('\n\n########### stage : {:d}th ##############\n\n'.format(stage))
         args.log_file.write('\n\n########### stage : {:d}th    ##############'.format(stage))
 
-        if(args.irm_weight > 0.0):
-            args.save_path = 'data/{}/pseudo_list/{}_{}_list_irm-{}_{}.txt'.format(args.dataset,args.source,args.target,args.irm_feature,args.irm_weight)
+        if(args.lr_decay):
+            lr_conf = 'lr_decay{}'.format(args.lr)
         else:
-            args.save_path = 'data/{}/pseudo_list/{}_{}_list.txt'.format(args.dataset,args.source,args.target)        
+            lr_conf = 'lr{}'.format(args.lr)
+
+        if(args.irm_weight > 0.0):
+            args.save_path = 'data/{}/pseudo_list/list_{}_{}_irm-{}_{}.txt'.format(args.dataset, args.init_method,args.irm_feature,args.irm_weight,lr_conf)
+        else:
+            args.save_path = 'data/{}/pseudo_list/{}_{}_{}_{}_list.txt'.format(args.dataset,args.source,args.target,args.baseline,lr_conf)        
 
         #updating parameters of gaussian-uniform mixture model with fixed network parameters，the updated pseudo labels and 
         #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
