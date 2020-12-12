@@ -30,9 +30,9 @@ def main(args):
         args.log_file.write('\n\n########### stage : {:d}th    ##############'.format(stage))
 
         if(args.lr_decay):
-            lr_conf = 'lr_decay{}'.format(args.lr)
+            lr_conf = 'lr_decay{}_b{}'.format(args.lr, args.batch_size)
         else:
-            lr_conf = 'lr{}'.format(args.lr)
+            lr_conf = 'lr{}_b{}'.format(args.lr, args.batch_size)
 
         if(args.irm_weight > 0.0):
             args.save_path = 'data/{}/pseudo_list/list_{}_{}_{}_irm-{}-s{}_{}.txt'.format(args.dataset, args.init_method, args.refine_method,args.irm_feature,args.irm_weight,args.irm_weight_scale,lr_conf)
@@ -63,6 +63,10 @@ def main(args):
             
     torch.save(best_model,'snapshot/save/final_best_model.pk')
     print('final_best_acc:{:.4f} init_acc:{:.4f}'.format(best_acc, init_acc))
+    if(best_acc > 0.0):
+        with open('%s.log' % args.dataset, 'a+') as f:
+            f.write(f"{best_acc}\t{init_acc}\t{args.init_method}\t{args.refine_method}\t{args.irm_feature}\t{args.irm_weight}\t{args.irm_weight_scale}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\n")
+
     return best_acc,best_model
 
 
