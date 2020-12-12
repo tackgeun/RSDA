@@ -1,10 +1,14 @@
 import argparse
-from solvers import train_init, train_init_irm
-from solvers import train,train_irm,train_irm_feat,train_MSTN_irm_feat
+from solvers import train_init
+from solvers import train
 from gaussian_uniform.weighted_pseudo_list import make_weighted_pseudo_list
 import copy
 import torch
 import os
+
+# irm solvers
+from solvers import train_init_irm
+from solvers import train_irm_logit, train_irm_feat, train_MSTN_irm_feat
 
 def main(args):
     args.log_file.write('\n\n###########  initialization ############')
@@ -31,7 +35,7 @@ def main(args):
             lr_conf = 'lr{}'.format(args.lr)
 
         if(args.irm_weight > 0.0):
-            args.save_path = 'data/{}/pseudo_list/list_{}_{}_irm-{}_{}.txt'.format(args.dataset, args.init_method,args.irm_feature,args.irm_weight,lr_conf)
+            args.save_path = 'data/{}/pseudo_list/list_{}_{}_{}_irm-{}-s{}_{}.txt'.format(args.dataset, args.init_method, args.refine_method,args.irm_feature,args.irm_weight,args.irm_weight_scale,lr_conf)
         else:
             args.save_path = 'data/{}/pseudo_list/{}_{}_{}_{}_list.txt'.format(args.dataset,args.source,args.target,args.baseline,lr_conf)        
 
@@ -40,15 +44,18 @@ def main(args):
         make_weighted_pseudo_list(args, model)
         
         #updating network parameters with fixed gussian-uniform mixture model and pseudo labels
-        if(args.irm_weight > 0.0):
-            if(args.irm_feature == 'logit'):
-                acc,model = train_irm(args)
-            elif(args.irm_feature == 'last_hidden'): # source classification + robust pseudo label loss
-                acc,model = train_irm_feat(args)
-            elif(args.irm_feature == 'last_hidden_MSTN'): # + MSTN loss
-                acc,model = train_MSTN_irm_feat(args)
-        else:
+        if(args.refine_method == 'default'):
             acc,model = train(args)
+        elif('irm' in args.refine_method):
+            if(args.irm_feature == 'logit'):
+                acc,model = train_irm_logit(args)
+            elif(args.irm_feature == 'last_hidden'): # source classification + robust pseudo label loss
+                if('MSTN' in args.refine_method): # + MSTN loss
+                    acc,model = train_MSTN_irm_feat(args)            
+                else:
+                    acc,model = train_irm_feat(args)
+        else:
+            assert(False)
         
         if acc > best_acc:
             best_acc = acc
@@ -84,10 +91,12 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.001, help="learning rate")
     parser.add_argument('--lr_decay', type=bool, default=True)
     parser.add_argument('--irm_weight', type=float, default=0.0)
+    parser.add_argument('--irm_weight_scale', type=float, default=1.0)
     parser.add_argument('--irm_feature', type=str, default='logit')
     parser.add_argument('--irm_type', type=str, default='batch')
     parser.add_argument('--irm_warmup_step', type=int, default=10)
     parser.add_argument('--init_method', type=str, default='default')
+    parser.add_argument('--refine_method', type=str, default='default')
 
     parser.add_argument('--stages',type=int,default=6,help='the number of alternative iteration stages')
     parser.add_argument('--max_iter',type=int,default=5000)

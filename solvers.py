@@ -163,7 +163,7 @@ def penalty_weights(logits, y, weights, criterion_fun):
     grad = autograd.grad(loss, [scale], create_graph=True)[0]
     return torch.sum(grad ** 2)
 
-def train_irm(args):
+def train_irm_logit(args):
     # prepare data
     dsets = {}
     dset_loaders = {}
@@ -659,8 +659,14 @@ def train_init_irm(args):
             scale_source = torch.ones(inputs_source.size(0),1).cuda().requires_grad_()
             scale_target = torch.ones(inputs_target.size(0),1).cuda().requires_grad_()
 
-        features_source, outputs_source = model.forward_mul(inputs_source, scale_source)
-        features_target, outputs_target = model.forward_mul(inputs_target, scale_target)
+        if(args.irm_feature == 'last_hidden'):
+            features_source, outputs_source = model.forward_mul(inputs_source, scale_source)
+            features_target, outputs_target = model.forward_mul(inputs_target, scale_target)
+        elif(args.irm_feature == 'logit'):
+            features_source, outputs_source = model(inputs_source)
+            features_target, outputs_target = model(inputs_target)
+            outputs_source = outputs_source * scale_source
+            outputs_target = outputs_target * scale_target
 
         features = torch.cat((features_source, features_target), dim=0)
 
