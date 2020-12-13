@@ -35,7 +35,7 @@ def main(args):
             lr_conf = 'lr{}_b{}'.format(args.lr, args.batch_size)
 
         if(args.irm_weight > 0.0):
-            args.save_path = 'data/{}/pseudo_list/list_{}_{}_{}_irm-{}-s{}_{}.txt'.format(args.dataset, args.init_method, args.refine_method,args.irm_feature,args.irm_weight,args.irm_weight_scale,lr_conf)
+            args.save_path = 'data/{}/pseudo_list/list_r{}_{}_{}_{}_irm-{}-s{}_{}.txt'.format(args.dataset, args.radius, args.init_method, args.refine_method,args.irm_feature,args.irm_weight,args.irm_weight_scale,lr_conf)
         else:
             args.save_path = 'data/{}/pseudo_list/{}_{}_{}_{}_list.txt'.format(args.dataset,args.source,args.target,args.baseline,lr_conf)        
 
@@ -63,9 +63,9 @@ def main(args):
             
     torch.save(best_model,'snapshot/save/final_best_model.pk')
     print('final_best_acc:{:.4f} init_acc:{:.4f}'.format(best_acc, init_acc))
-    if(best_acc > 0.0):
-        with open('%s.log' % args.dataset, 'a+') as f:
-            f.write(f"{best_acc}\t{init_acc}\t{args.init_method}\t{args.refine_method}\t{args.irm_feature}\t{args.irm_weight}\t{args.irm_weight_scale}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\n")
+    #if(best_acc > 0.0):
+    with open('%s.log' % args.perf_log, 'a+') as f:
+        f.write(f"{best_acc}\t{init_acc}\t{args.radius}\t{args.stages}\t{args.init_method}\t{args.refine_method}\t{args.irm_feature}\t{args.irm_weight}\t{args.irm_weight_scale}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\n")
 
     return best_acc,best_model
 
@@ -94,6 +94,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default='san', help="output directory of our model (in ../snapshot directory)")
     parser.add_argument('--lr', type=float, default=0.001, help="learning rate")
     parser.add_argument('--lr_decay', type=bool, default=True)
+    
     parser.add_argument('--irm_weight', type=float, default=0.0)
     parser.add_argument('--irm_weight_scale', type=float, default=1.0)
     parser.add_argument('--irm_feature', type=str, default='logit')
@@ -101,10 +102,12 @@ if __name__ == "__main__":
     parser.add_argument('--irm_warmup_step', type=int, default=10)
     parser.add_argument('--init_method', type=str, default='default')
     parser.add_argument('--refine_method', type=str, default='default')
-
+    
+    parser.add_argument('--radius', type=float, default=10.0)
     parser.add_argument('--stages',type=int,default=6,help='the number of alternative iteration stages')
     parser.add_argument('--max_iter',type=int,default=5000)
     parser.add_argument('--batch_size',type=int,default=36)
+    parser.add_argument('--perf_log', type=str, default='visda-2017')
     parser.add_argument('--log_file')
     args = parser.parse_args()
 
