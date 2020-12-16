@@ -684,18 +684,17 @@ def train_init_irm(args):
        
 
         irm_loss = 0
-        if('MSTN' in args.init_method):
-            if(i>args.irm_warmup_step):
+        if(i>args.irm_warmup_step):
+            if('MSTN' in args.init_method):
                 irm_loss += sum(penalty_loss_scales(total_loss, [scale_source, scale_target]))
+            else:
+                source_irm_loss = sum(penalty_loss_scales(classifier_loss, [scale_source]))
+                irm_loss += source_irm_loss        
 
-        else:
-            source_irm_loss = sum(penalty_loss_scales(classifier_loss, [scale_source]))
-            irm_loss += source_irm_loss        
-
-        if('target' in args.init_method):
-            classifier_loss_target = nn.CrossEntropyLoss()(outputs_target, pseu_labels_target.detach())
-            target_irm_loss = sum(penalty_loss_scales(classifier_loss_target, [scale_target]))
-            irm_loss += target_irm_loss
+            if('target' in args.init_method):
+                classifier_loss_target = nn.CrossEntropyLoss()(outputs_target, pseu_labels_target.detach())
+                target_irm_loss = sum(penalty_loss_scales(classifier_loss_target, [scale_target]))
+                irm_loss += target_irm_loss
         
         total_loss += args.irm_weight * irm_loss
 
