@@ -56,8 +56,8 @@ def train(args):
     adv_net = network.AdversarialNetwork(in_feature=model.output_num(),hidden_size=1024,max_iter=2000).cuda()
     parameter_classifier = [model.get_parameters()[2]]
     parameter_feature = model.get_parameters()[0:2] + adv_net.get_parameters()
-    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr,momentum=0.9,weight_decay=0.005)
-    optimizer_feature = torch.optim.SGD(parameter_feature,lr=args.lr,momentum=0.9,weight_decay=0)
+    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
+    optimizer_feature = torch.optim.SGD(parameter_feature,lr=args.lr_refine,momentum=0.9,weight_decay=0)
 
     gpus = args.gpu_id.split(',')
     if len(gpus) > 1:
@@ -93,7 +93,7 @@ def train(args):
 
         model.train(True)
         adv_net.train(True)
-        if(args.lr_decay):
+        if(args.lr_decay_refine):
             optimizer_classifier = lr_schedule.inv_lr_scheduler(optimizer_classifier,i)
             optimizer_feature = lr_schedule.inv_lr_scheduler(optimizer_feature, i)
 
@@ -184,7 +184,7 @@ def train_irm_logit(args):
     #model
     model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
     parameter_classifier = model.get_parameters()
-    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr,momentum=0.9,weight_decay=0.005)
+    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
 
     gpus = args.gpu_id.split(',')
     if len(gpus) > 1:
@@ -215,7 +215,7 @@ def train_irm_logit(args):
             torch.save(best_model,'snapshot/save/best_model.pk')
 
         model.train(True)
-        if(args.lr_decay):
+        if(args.lr_decay_refine):
             optimizer_classifier = lr_schedule.inv_lr_scheduler(optimizer_classifier,i)
 
         if i % len_train_source == 0:
@@ -241,7 +241,7 @@ def train_irm_logit(args):
         target_irm_loss = penalty(outputs_target, pseudo_labels_target, lambda x,y: utils.robust_pseudo_loss(x,y,weights))
 
         classifier_loss = source_class_loss + target_robust_loss
-        classifier_loss += args.irm_weight * (source_irm_loss + target_irm_loss)
+        classifier_loss += args.irm_weight_refine * (source_irm_loss + target_irm_loss)
         #classifier_loss += args.irm_weight * (source_irm_loss)
 
         optimizer_classifier.zero_grad()
@@ -290,7 +290,7 @@ def train_irm_feat(args):
     #model
     model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
     parameter_classifier = model.get_parameters()
-    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr,momentum=0.9,weight_decay=0.005)
+    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
 
     gpus = args.gpu_id.split(',')
     if len(gpus) > 1:
@@ -321,7 +321,7 @@ def train_irm_feat(args):
             torch.save(best_model,'snapshot/save/best_model.pk')
 
         model.train(True)
-        if(args.lr_decay):
+        if(args.lr_decay_refine):
             optimizer_classifier = lr_schedule.inv_lr_scheduler(optimizer_classifier,i)
 
         if i % len_train_source == 0:
@@ -399,7 +399,7 @@ def train_MSTN_irm_feat(args):
     #model
     model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
     parameter_classifier = model.get_parameters()
-    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr,momentum=0.9,weight_decay=0.005)
+    optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
 
     gpus = args.gpu_id.split(',')
     if len(gpus) > 1:
@@ -433,7 +433,7 @@ def train_MSTN_irm_feat(args):
             torch.save(best_model,'snapshot/save/best_model.pk')
 
         model.train(True)
-        if(args.lr_decay):
+        if(args.lr_decay_refine):
             optimizer_classifier = lr_schedule.inv_lr_scheduler(optimizer_classifier,i)
 
         if i % len_train_source == 0:

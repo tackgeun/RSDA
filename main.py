@@ -34,11 +34,31 @@ def main(args):
         else:
             lr_conf = 'lr{}_b{}'.format(args.lr, args.batch_size)
 
-        if(args.irm_weight > 0.0):
-            args.save_path = 'data/{}/pseudo_list/list_r{}_{}_{}_{}_irm-{}-s{}_{}.txt'.format(args.dataset, args.radius, args.init_method, args.refine_method,args.irm_feature,args.irm_weight,args.irm_weight_scale,lr_conf)
+        if(args.lr_decay_refine):
+            lr_conf_refine = 'lr_decay{}_b{}'.format(args.lr_refine, args.batch_size_refine)
         else:
-            args.save_path = 'data/{}/pseudo_list/{}_{}_{}_{}_list.txt'.format(args.dataset,args.source,args.target,args.baseline,lr_conf)        
+            lr_conf_refine = 'lr{}_b{}'.format(args.lr_refine, args.batch_size_refine)
 
+        # overall param
+        param1 = f'list_{args.baseline}_r{args.radius}'
+        # stage 1 param
+        param2 = f'_{args.init_method}_{lr_conf}'
+        # stage 2 param
+        param3 = f'_{args.refine_method}_{lr_conf_refine}'
+
+        if(args.irm_weight > 0.0 or args.irm_weight_refine > 0.0):
+            param1 += f'_irm{args.irm_feature}'
+        
+        if(args.irm_weight > 0.0):
+            param2 += f'_irm{args.irm_weight}'
+
+        if(args.irm_weight_refine > 0.0):
+            param3 += f'_irm{args.irm_weight_refine}'
+
+        if(args.stages > 0):
+            args.save_path = 'data/{}/pseudo_list/{}_s{}_{}.txt'.format(args.dataset, param1 + param2, args.stages, param3)
+        else:
+            args.save_path = 'data/{}/pseudo_list/{}.txt'.format(args.dataset, param1 + param2)
         #updating parameters of gaussian-uniform mixture model with fixed network parameters，the updated pseudo labels and 
         #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
         make_weighted_pseudo_list(args, model)
@@ -65,9 +85,12 @@ def main(args):
     print('final_best_acc:{:.4f} init_acc:{:.4f}'.format(best_acc, init_acc))
     #if(best_acc > 0.0):
     with open('%s.log' % args.perf_log, 'a+') as f:
-        f.write(f"{best_acc}\t{init_acc}\t{args.radius}\t{args.stages}\t{args.init_method}\t{args.refine_method}\t{args.irm_feature}\t{args.irm_weight}\t{args.irm_weight_scale}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\n")
+        log1 = f"{best_acc}\t{init_acc}\t{args.radius}\t{args.stages}\t{args.irm_feature}\t"
+        log2 = f"{args.init_method}\t{args.irm_weight}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\t"
+        log3 = f"{args.refine_method}\t{args.irm_weight_refine}\t{args.lr_refine}\t{args.lr_decay_refine}\t{args.batch_size_refine}\n"
+        f.write(log1 + log2 + log3)
 
-    return best_acc,best_model
+    return best_acc, best_model
 
 
 if __name__ == "__main__":
@@ -89,26 +112,35 @@ if __name__ == "__main__":
     parser.add_argument('--target_list', type=str, default='data/visda-2017/validation_list.txt', help="The target dataset path list")    
     parser.add_argument('--num_class',type=int,default=12,help='the number of classes')
     
+    # experiments
     parser.add_argument('--test_interval', type=int, default=50, help="interval of two continuous test phase")
     parser.add_argument('--snapshot_interval', type=int, default=1000, help="interval of two continuous output model")
     parser.add_argument('--output_dir', type=str, default='san', help="output directory of our model (in ../snapshot directory)")
-    parser.add_argument('--lr', type=float, default=0.001, help="learning rate")
-    parser.add_argument('--lr_decay', type=bool, default=True)
-    
-    parser.add_argument('--irm_weight', type=float, default=0.0)
-    parser.add_argument('--irm_weight_scale', type=float, default=1.0)
+    parser.add_argument('--perf_log', type=str, default='visda-2017')
+    parser.add_argument('--log_file')
+ 
+    # parameters for overall training
     parser.add_argument('--irm_feature', type=str, default='logit')
     parser.add_argument('--irm_type', type=str, default='batch')
     parser.add_argument('--irm_warmup_step', type=int, default=10)
-    parser.add_argument('--init_method', type=str, default='default')
-    parser.add_argument('--refine_method', type=str, default='default')
-    
-    parser.add_argument('--radius', type=float, default=10.0)
     parser.add_argument('--stages',type=int,default=6,help='the number of alternative iteration stages')
     parser.add_argument('--max_iter',type=int,default=5000)
+    parser.add_argument('--radius', type=float, default=10.0)
+
+    # parameters for training stage 1
+    parser.add_argument('--init_method', type=str, default='default')
+    parser.add_argument('--irm_weight', type=float, default=0.0)
+    parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")
+    parser.add_argument('--lr_decay', type=bool, default=True)
     parser.add_argument('--batch_size',type=int,default=36)
-    parser.add_argument('--perf_log', type=str, default='visda-2017')
-    parser.add_argument('--log_file')
+
+    # parameters for training stage 2
+    parser.add_argument('--refine_method', type=str, default='default')
+    parser.add_argument('--irm_weight_refine', type=float, default=0)
+    parser.add_argument('--lr_refine', type=float, default=1e-3, help="learning rate")
+    parser.add_argument('--lr_decay_refine', type=bool, default=True)
+    parser.add_argument('--batch_size_refine',type=int,default=36)
+ 
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
