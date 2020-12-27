@@ -40,7 +40,16 @@ def main(args):
             lr_conf_refine = 'lr{}_b{}'.format(args.lr_refine, args.batch_size_refine)
 
         # overall param
-        param1 = f'list_{args.baseline}_r{args.radius}'
+        if(args.trainable_radius):
+            param1 = f'list_{args.baseline}_trainR{args.radius}'
+        else:
+            param1 = f'list_{args.baseline}_R{args.radius}'
+    
+        if(args.radius_refine > 0):
+            param1 += f'_R2{args.radius_refine}'
+        else:
+            args.radius_refine = args.radius
+
         # stage 1 param
         param2 = f'_{args.init_method}_{lr_conf}'
         # stage 2 param
@@ -85,9 +94,14 @@ def main(args):
     print('final_best_acc:{:.4f} init_acc:{:.4f}'.format(best_acc, init_acc))
     #if(best_acc > 0.0):
     with open('%s.log' % args.perf_log, 'a+') as f:
-        log1 = f"{best_acc}\t{init_acc}\t{args.radius}\t{args.stages}\t{args.irm_feature}\t"
-        log2 = f"{args.init_method}\t{args.irm_weight}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\t"
-        log3 = f"{args.refine_method}\t{args.irm_weight_refine}\t{args.lr_refine}\t{args.lr_decay_refine}\t{args.batch_size_refine}\n"
+        if(args.trainable_radius):
+            pdb.set_trace()
+            radius = float(best_model['radius'])
+        else:
+            radius = args.radius
+        log1 = f"{best_acc}\t{init_acc}\t{args.stages}\t{args.irm_feature}\t"
+        log2 = f"{args.init_method}\t{args.radius}\t{args.irm_weight}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\t"
+        log3 = f"{args.refine_method}\t{args.radius_refine}\t{args.irm_weight_refine}\t{args.lr_refine}\t{args.lr_decay_refine}\t{args.batch_size_refine}\n"
         f.write(log1 + log2 + log3)
 
     return best_acc, best_model
@@ -126,6 +140,7 @@ if __name__ == "__main__":
     parser.add_argument('--stages',type=int,default=6,help='the number of alternative iteration stages')
     parser.add_argument('--max_iter',type=int,default=5000)
     parser.add_argument('--radius', type=float, default=10.0)
+    parser.add_argument('--trainable_radius', type=bool, default=False)
 
     # parameters for training stage 1
     parser.add_argument('--init_method', type=str, default='default')
@@ -140,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_refine', type=float, default=1e-3, help="learning rate")
     parser.add_argument('--lr_decay_refine', type=bool, default=True)
     parser.add_argument('--batch_size_refine',type=int,default=36)
- 
+    parser.add_argument('--radius_refine', type=float, default=0.0)
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id

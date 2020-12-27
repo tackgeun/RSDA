@@ -52,7 +52,7 @@ def train(args):
                                       shuffle=False, num_workers=4)
 
     #model
-    model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
+    model = network.ResNet(class_num=args.num_class,radius=args.radius_refine,trainable_radius=args.trainable_radius).cuda()
     adv_net = network.AdversarialNetwork(in_feature=model.output_num(),hidden_size=1024,max_iter=2000).cuda()
     parameter_classifier = [model.get_parameters()[2]]
     parameter_feature = model.get_parameters()[0:2] + adv_net.get_parameters()
@@ -182,7 +182,7 @@ def train_irm_logit(args):
                                       shuffle=False, num_workers=4)
 
     #model
-    model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
+    model = network.ResNet(class_num=args.num_class,radius=args.radius_refine,trainable_radius=args.trainable_radius).cuda()
     parameter_classifier = model.get_parameters()
     optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
 
@@ -288,7 +288,7 @@ def train_irm_feat(args):
                                       shuffle=False, num_workers=4)
 
     #model
-    model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
+    model = network.ResNet(class_num=args.num_class,radius=args.radius_refine,trainable_radius=args.trainable_radius).cuda()
     parameter_classifier = model.get_parameters()
     optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
 
@@ -397,7 +397,7 @@ def train_MSTN_irm_feat(args):
                                       shuffle=False, num_workers=4)
 
     #model
-    model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
+    model = network.ResNet(class_num=args.num_class,radius=args.radius_refine,trainable_radius=args.trainable_radius).cuda()
     parameter_classifier = model.get_parameters()
     optimizer_classifier = torch.optim.SGD(parameter_classifier,lr=args.lr_refine,momentum=0.9,weight_decay=0.005)
 
@@ -510,7 +510,7 @@ def train_init(args):
                                       shuffle=False, num_workers=4)
 
     #model
-    model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
+    model = network.ResNet(class_num=args.num_class,radius=args.radius,trainable_radius=args.trainable_radius).cuda()
     adv_net = network.AdversarialNetwork(in_feature=model.output_num(),hidden_size=1024).cuda()
     parameter_list = model.get_parameters() + adv_net.get_parameters()
     optimizer = torch.optim.SGD(parameter_list,lr=args.lr,momentum=0.9,weight_decay=0.005)
@@ -604,8 +604,9 @@ def train_init_irm(args):
                                       shuffle=False, num_workers=4)
 
     #model
-    model = network.ResNet(class_num=args.num_class,radius=args.radius).cuda()
+    model = network.ResNet(class_num=args.num_class,radius=args.radius,trainable_radius=args.trainable_radius).cuda()
     parameter_list = model.get_parameters()
+    #pdb.set_trace()
     optimizer = torch.optim.SGD(parameter_list,lr=args.lr,momentum=0.9,weight_decay=0.005)
 
     gpus = args.gpu_id.split(',')
@@ -703,8 +704,13 @@ def train_init_irm(args):
         total_loss.backward()
         optimizer.step()
 
-        print('step:{: d},\t,class_loss:{:.4f},\t,irm_loss:{:.4f}'.format(i, classifier_loss.item(),
-                                                                            float(irm_loss)))
+        if(args.trainable_radius):
+            print('step:{: d},\t,class_loss:{:.4f},\t,irm_loss:{:.4f},\tradius:{:.4f}'.format(i, classifier_loss.item(),
+                                                                                float(irm_loss),float(model.radius)))
+
+        else:
+            print('step:{: d},\t,class_loss:{:.4f},\t,irm_loss:{:.4f}'.format(i, classifier_loss.item(),
+                                                                                float(irm_loss)))
         Cs_memory.detach_()
         Ct_memory.detach_()
 

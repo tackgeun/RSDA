@@ -27,7 +27,7 @@ def grl_hook(coeff):
 
 
 class ResNet(nn.Module):
-  def __init__(self, use_bottleneck=True, bottleneck_dim=256, new_cls=True, radius=10.0, class_num=1000):
+  def __init__(self, use_bottleneck=True, bottleneck_dim=256, new_cls=True, radius=10.0, class_num=1000, trainable_radius=False):
     super(ResNet, self).__init__()
     model_resnet = models.resnet50(pretrained=True)
     self.conv1 = model_resnet.conv1
@@ -57,7 +57,12 @@ class ResNet(nn.Module):
     else:
         self.fc = model_resnet.fc
         self.__in_features = model_resnet.fc.in_features
-    self.radius=radius
+    
+    self.trainable_radius=trainable_radius
+    if(trainable_radius):
+        self.radius=nn.Parameter(torch.ones(1)*radius, requires_grad=True)
+    else:
+        self.radius=radius
 
   def forward(self, x,label=None,weight=None):
     x = self.feature_layers(x)
@@ -92,6 +97,10 @@ class ResNet(nn.Module):
                             {"params":self.fc.parameters(), "lr_mult":10, 'decay_mult':2}]
     else:
         parameter_list = [{"params":self.parameters(), "lr_mult":1, 'decay_mult':2}]
+
+    if(self.trainable_radius):
+        parameter_list.append({"params":self.radius, "lr_mult":10, 'decay_mult':20})
+
     return parameter_list
 
 
