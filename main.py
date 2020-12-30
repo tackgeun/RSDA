@@ -49,6 +49,9 @@ def main(args):
             param1 += f'_R2{args.radius_refine}'
         else:
             args.radius_refine = args.radius
+        
+        if(args.random_seed > 0):
+            param1 += f'_seed{args.random_seed}'
 
         # stage 1 param
         param2 = f'_{args.init_method}_{lr_conf}'
@@ -99,7 +102,7 @@ def main(args):
             radius = float(best_model['radius'])
         else:
             radius = args.radius
-        log1 = f"{best_acc}\t{init_acc}\t{args.stages}\t{args.irm_feature}\t"
+        log1 = f"{best_acc}\t{init_acc}\t{args.random_seed}\t{args.stages}\t{args.irm_feature}\t"
         log2 = f"{args.init_method}\t{args.radius}\t{args.irm_weight}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\t"
         log3 = f"{args.refine_method}\t{args.radius_refine}\t{args.irm_weight_refine}\t{args.lr_refine}\t{args.lr_decay_refine}\t{args.batch_size_refine}\n"
         f.write(log1 + log2 + log3)
@@ -127,6 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_class',type=int,default=12,help='the number of classes')
     
     # experiments
+    parser.add_argument("--random_seed", type=int, default=0)
     parser.add_argument('--test_interval', type=int, default=50, help="interval of two continuous test phase")
     parser.add_argument('--snapshot_interval', type=int, default=1000, help="interval of two continuous output model")
     parser.add_argument('--output_dir', type=str, default='san', help="output directory of our model (in ../snapshot directory)")
@@ -167,6 +171,15 @@ if __name__ == "__main__":
     log_file.write('dataset:{}\tsource:{}\ttarget:{}\n\n'
                    ''.format(args.dataset,args.source,args.target))
     args.log_file = log_file
+
+    if(args.random_seed > 0):
+        torch.manual_seed(args.random_seed)
+        np.random.seed(args.random_seed)
+        random.seed(args.random_seed)
+        torch.cuda.manual_seed(args.random_seed)
+        torch.cuda.manual_seed_all(args.random_seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
     main(args)
 
