@@ -5,6 +5,8 @@ from gaussian_uniform.weighted_pseudo_list import make_weighted_pseudo_list
 import copy
 import torch
 import os
+import numpy as np
+import random
 
 # irm solvers
 from solvers import train_init_irm
