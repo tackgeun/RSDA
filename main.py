@@ -12,70 +12,80 @@ import random
 from solvers import train_init_irm
 from solvers import train_irm_logit, train_irm_feat, train_MSTN_irm_feat
 
+def get_experiment_name(args):
+    if(args.lr_decay):
+        lr_conf = 'lr_decay{}_b{}'.format(args.lr, args.batch_size)
+    else:
+        lr_conf = 'lr{}_b{}'.format(args.lr, args.batch_size)
+
+    if(args.lr_decay_refine):
+        lr_conf_refine = 'lr_decay{}_b{}'.format(args.lr_refine, args.batch_size_refine)
+    else:
+        lr_conf_refine = 'lr{}_b{}'.format(args.lr_refine, args.batch_size_refine)
+
+    # overall param
+    if(args.trainable_radius):
+        param1 = f'list_{args.baseline}_trainR{args.radius}'
+    else:
+        param1 = f'list_{args.baseline}_R{args.radius}'
+
+    if(args.radius_refine > 0):
+        param1 += f'_R2{args.radius_refine}'
+    else:
+        args.radius_refine = args.radius
+    
+    if(args.random_seed > 0):
+        param1 += f'_seed{args.random_seed}'
+
+    # stage 1 param
+    param2 = f'_{args.init_method}_{lr_conf}'
+    # stage 2 param
+    param3 = f'_{args.refine_method}_{lr_conf_refine}'
+
+    if(args.irm_weight > 0.0 or args.irm_weight_refine > 0.0):
+        param1 += f'_irm{args.irm_feature}'
+    
+    if(args.irm_weight > 0.0):
+        param2 += f'_irm{args.irm_weight}'
+
+    if(args.irm_weight_refine > 0.0):
+        param3 += f'irm{args.irm_weight_refine}'
+
+    if(args.stages > 0):
+        args.save_path = 'data/{}/pseudo_list/{}_s{}_{}.txt'.format(args.dataset, param1 + param2, args.stages, param3)
+    else:
+        args.save_path = 'data/{}/pseudo_list/{}.txt'.format(args.dataset, param1 + param2)
+
+    return args
+
 def main(args):
     args.log_file.write('\n\n###########  initialization ############')
+    args = get_experiment_name(args)
     
     #initializing
-    if( 'default' in args.init_method):
-        acc, model = train_init(args)
-    elif('irm' in args.init_method):
-        acc, model = train_init_irm(args)
+    if('pretrained' in args.init_method):
+        init_acc = 0.0
+        best_acc = 0.0
+        args.save_path = args.pretrained_path
     else:
-        assert(False)
-    
-    init_acc = acc
-    best_acc = acc
-    best_model = copy.deepcopy(model)
+        if('default' in args.init_method):
+            acc, model = train_init(args)
+        elif('irm' in args.init_method):
+            acc, model = train_init_irm(args)
+        else:
+            assert(False)
+
+        #updating parameters of gaussian-uniform mixture model with fixed network parameters，the updated pseudo labels and 
+        #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
+        make_weighted_pseudo_list(args, model)
+
+        init_acc = acc
+        best_acc = acc
+        best_model = copy.deepcopy(model)
     
     for stage in range(args.stages):
         print('\n\n########### stage : {:d}th ##############\n\n'.format(stage))
         args.log_file.write('\n\n########### stage : {:d}th    ##############'.format(stage))
-
-        if(args.lr_decay):
-            lr_conf = 'lr_decay{}_b{}'.format(args.lr, args.batch_size)
-        else:
-            lr_conf = 'lr{}_b{}'.format(args.lr, args.batch_size)
-
-        if(args.lr_decay_refine):
-            lr_conf_refine = 'lr_decay{}_b{}'.format(args.lr_refine, args.batch_size_refine)
-        else:
-            lr_conf_refine = 'lr{}_b{}'.format(args.lr_refine, args.batch_size_refine)
-
-        # overall param
-        if(args.trainable_radius):
-            param1 = f'list_{args.baseline}_trainR{args.radius}'
-        else:
-            param1 = f'list_{args.baseline}_R{args.radius}'
-    
-        if(args.radius_refine > 0):
-            param1 += f'_R2{args.radius_refine}'
-        else:
-            args.radius_refine = args.radius
-        
-        if(args.random_seed > 0):
-            param1 += f'_seed{args.random_seed}'
-
-        # stage 1 param
-        param2 = f'_{args.init_method}_{lr_conf}'
-        # stage 2 param
-        param3 = f'_{args.refine_method}_{lr_conf_refine}'
-
-        if(args.irm_weight > 0.0 or args.irm_weight_refine > 0.0):
-            param1 += f'_irm{args.irm_feature}'
-        
-        if(args.irm_weight > 0.0):
-            param2 += f'_irm{args.irm_weight}'
-
-        if(args.irm_weight_refine > 0.0):
-            param3 += f'_irm{args.irm_weight_refine}'
-
-        if(args.stages > 0):
-            args.save_path = 'data/{}/pseudo_list/{}_s{}_{}.txt'.format(args.dataset, param1 + param2, args.stages, param3)
-        else:
-            args.save_path = 'data/{}/pseudo_list/{}.txt'.format(args.dataset, param1 + param2)
-        #updating parameters of gaussian-uniform mixture model with fixed network parameters，the updated pseudo labels and 
-        #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
-        make_weighted_pseudo_list(args, model)
         
         #updating network parameters with fixed gussian-uniform mixture model and pseudo labels
         if(args.refine_method == 'default'):
@@ -90,11 +100,19 @@ def main(args):
                     acc,model = train_irm_feat(args)
         else:
             assert(False)
-        
+
+        args = get_experiment_name(args)
+        #updating parameters of gaussian-uniform mixture model with fixed network parameters，the updated pseudo labels and 
+        #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
+        make_weighted_pseudo_list(args, model)
+
+
         if acc > best_acc:
             best_acc = acc
             best_model = copy.deepcopy(model)
-            
+
+
+
     torch.save(best_model,'snapshot/save/final_best_model.pk')
     print('final_best_acc:{:.4f} init_acc:{:.4f}'.format(best_acc, init_acc))
     #if(best_acc > 0.0):
@@ -154,6 +172,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")
     parser.add_argument('--lr_decay', type=bool, default=True)
     parser.add_argument('--batch_size',type=int,default=36)
+    parser.add_argument('--pretrained_path', type=str, default='')
 
     # parameters for training stage 2
     parser.add_argument('--refine_method', type=str, default='default')
