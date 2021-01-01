@@ -24,13 +24,16 @@ def get_experiment_name(args):
         lr_conf_refine = 'lr{}_b{}'.format(args.lr_refine, args.batch_size_refine)
 
     # overall param
-    if(args.trainable_radius):
-        param1 = f'list_{args.baseline}_trainR{args.radius}'
-    else:
-        param1 = f'list_{args.baseline}_R{args.radius}'
+    param1 = f'list_{args.baseline}'
+
+    if('pretrained' not in args.init_method):
+        if(args.trainable_radius):
+            param1 += f'_trainR{args.radius}'
+        else:
+            param1 += f'_R{args.radius}'
 
     if(args.radius_refine > 0):
-        param1 += f'_R2{args.radius_refine}'
+        param1 += f'_Rref{args.radius_refine}'
     else:
         args.radius_refine = args.radius
     
@@ -43,7 +46,7 @@ def get_experiment_name(args):
     param3 = f'_{args.refine_method}_{lr_conf_refine}'
 
     if(args.irm_weight > 0.0 or args.irm_weight_refine > 0.0):
-        param1 += f'_irm{args.irm_feature}'
+        param1 += f'_irm-{args.irm_feature}'
     
     if(args.irm_weight > 0.0):
         param2 += f'_irm{args.irm_weight}'
@@ -52,7 +55,10 @@ def get_experiment_name(args):
         param3 += f'irm{args.irm_weight_refine}'
 
     if(args.stages > 0):
-        args.save_path = 'data/{}/pseudo_list/{}_s{}_{}.txt'.format(args.dataset, param1 + param2, args.stages, param3)
+        if('pretrained' in args.init_method):
+            args.save_path = 'data/{}/pseudo_list/{}_s{}{}.txt'.format(args.dataset, param1, args.stages, param3)
+        else:
+            args.save_path = 'data/{}/pseudo_list/{}_s{}_{}.txt'.format(args.dataset, param1 + param2, args.stages, param3)
     else:
         args.save_path = 'data/{}/pseudo_list/{}.txt'.format(args.dataset, param1 + param2)
 
@@ -81,6 +87,7 @@ def main(args):
 
         init_acc = acc
         best_acc = acc
+        best_stage = -1
         best_model = copy.deepcopy(model)
     
     for stage in range(args.stages):
@@ -106,15 +113,15 @@ def main(args):
         #posterior probability of correct labeling is listed in folder "./data/office(dataset name)/pseudo_list"
         make_weighted_pseudo_list(args, model)
 
-
         if acc > best_acc:
             best_acc = acc
+            best_stage = stage
             best_model = copy.deepcopy(model)
 
 
 
     torch.save(best_model,'snapshot/save/final_best_model.pk')
-    print('final_best_acc:{:.4f} init_acc:{:.4f}'.format(best_acc, init_acc))
+    print('final_best_acc:{:.4f} init_acc:{:.4f} best_stage{}'.format(best_acc, init_acc, best_stage))
     #if(best_acc > 0.0):
     with open('%s.log' % args.perf_log, 'a+') as f:
         if(args.trainable_radius):
@@ -122,7 +129,7 @@ def main(args):
             radius = float(best_model['radius'])
         else:
             radius = args.radius
-        log1 = f"{best_acc}\t{init_acc}\t{args.random_seed}\t{args.stages}\t{args.irm_feature}\t"
+        log1 = f"{best_acc}\t{best_stage}\t{init_acc}\t{args.random_seed}\t{args.stages}\t{args.irm_feature}\t"
         log2 = f"{args.init_method}\t{args.radius}\t{args.irm_weight}\t{args.lr}\t{args.lr_decay}\t{args.batch_size}\t"
         log3 = f"{args.refine_method}\t{args.radius_refine}\t{args.irm_weight_refine}\t{args.lr_refine}\t{args.lr_decay_refine}\t{args.batch_size_refine}\n"
         f.write(log1 + log2 + log3)
